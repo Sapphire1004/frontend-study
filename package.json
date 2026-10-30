@@ -1,0 +1,55 @@
+{
+  "name": "study",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others --names frontend,backend,types \"pnpm dev:frontend\" \"pnpm dev:backend\" \"pnpm dev:types\"",
+    "dev:frontend": "vite --config frontend/vite.config.ts",
+    "dev:backend": "tsx watch --env-file-if-exists=.env backend/src/index.ts",
+    "dev:types": "tsrs --watch --noEmit",
+    "typecheck": "node scripts/typecheck.mjs tsrs",
+    "typecheck:fast": "node scripts/typecheck.mjs tsrs --fast",
+    "typecheck:tsc": "node scripts/typecheck.mjs tsc",
+    "typecheck:tsgo": "node scripts/typecheck.mjs tsgo",
+    "bench:types": "node scripts/benchmark-types.mjs",
+    "bench:types:fast": "node scripts/benchmark-types.mjs --rust-fast",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "build": "pnpm typecheck && pnpm build:frontend && pnpm build:backend",
+    "build:frontend": "vite build --config frontend/vite.config.ts",
+    "build:backend": "tsrs -p backend/tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/backend/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "hono": "4.13.14",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "concurrently": "10.0.6",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "tailwindcss": "4.3.3",
+    "tsrs": "0.20.1-ts7.1.0-beta",
+    "tsx": "4.23.15",
+    "typescript-go": "npm:typescript@7.1.0-beta",
+    "typescript-js": "npm:typescript@6.0.3",
+    "vite": "8.3.5"
+  },
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "pnpm": ">=11.17.0 <12"
+  },
+  "packageManager": "pnpm@11.17.0"
+}

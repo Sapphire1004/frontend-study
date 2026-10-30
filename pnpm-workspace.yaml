@@ -1,0 +1,6 @@
+engineStrict: true
+saveExact: true
+storeDir: .pnpm-store
+
+allowBuilds:
+  esbuild: true
