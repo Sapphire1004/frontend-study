@@ -20,6 +20,7 @@ Vite + React + Tailwind CSS 프런트엔드와 Hono 백엔드입니다. 타입 �
 | `react`                      | `19.3.1`              |
 | `react-dom`                  | `19.3.1`              |
 | `react-router`               | `8.5.1`               |
+| `zustand`                    | `5.0.16`              |
 | `@tailwindcss/vite`          | `4.3.3`               |
 | `@types/node`                | `24.19.2`             |
 | `@types/react`               | `19.3.0`              |
@@ -69,6 +70,8 @@ frontend/
       update-deck/UpdateDeckPage.tsx
       lobby/LobbyPage.tsx
       game/GamePage.tsx
+    store/authStore.ts       로그인 상태 스토어 실습
+    types/auth.ts            인증 관련 공유 타입
     lib/api.ts           Hono RPC 클라이언트 (백엔드 응답 타입 공유)
   index.html
   vite.config.ts         Vite 프로젝트 경로와 /api 프록시
@@ -92,7 +95,23 @@ tsconfig.json            공통 strict 설정과 개발 watch 대상
 
 ## 페이지
 
-페이지는 `/`, `/profile`, `/deckbuilder`, `/update-deck`, `/lobby`, `/game`에 연결되어 있습니다. 준비된 페이지를 바탕으로 링크와 버튼 이동을 학습 중입니다. 실제 진행 상황과 남은 오류는 [1일차 기록](day-01.md)에서 확인합니다.
+페이지는 `/`, `/profile`, `/deckbuilder`, `/update-deck`, `/lobby`, `/game`에 연결되어 있습니다. 라우팅에 이어 Zustand 로그인·로그아웃을 실습했습니다. 최신 진행 상황과 남은 오류는 [Day 2 기록](day-02.md#검증-결과)에서 확인합니다.
+
+## 프런트엔드 import 경로
+
+`@/`는 `frontend/src/`를 가리킵니다. 프런트엔드 내부 파일은 다음과 같이 가져옵니다.
+
+```ts
+import HomePage from '@/pages/home/HomePage';
+import type { User } from '@/types/auth';
+```
+
+Vite의 `resolve.alias`는 개발 서버와 빌드에서 경로를 찾고, 루트 `tsconfig.json`의 `compilerOptions.paths`는 에디터와 타입 검사에서 같은 경로를 찾도록 설정합니다. `frontend/tsconfig.json`은 루트 설정을 상속합니다. VS Code의 자동 import도 별칭 경로를 우선하도록 설정했습니다.
+
+`@/`의 범위는 프런트엔드 소스입니다. `lib/api.ts`가 백엔드의 `AppType`을 가져오는 경로는 별도의 상대 경로를 사용합니다.
+
+- [Vite 경로 별칭 설정](https://vite.dev/config/shared-options#resolve-alias)
+- [TypeScript paths 설정](https://www.typescriptlang.org/tsconfig/paths.html)
 
 ## 명령어
 
@@ -182,6 +201,8 @@ VS Code 추천 확장 **Tailwind CSS IntelliSense** (`bradlc.vscode-tailwindcss`
 `.oxlintrc.json`에서 TypeScript·React·접근성 검사와 React Hooks 규칙을 설정했습니다. `.oxfmtrc.json`은 2칸 들여쓰기, 작은따옴표, 문장 끝 세미콜론(`semi: true`), import 정렬과 Tailwind 클래스 정렬을 사용합니다.
 
 VS Code 추천 확장 **Oxc** (`oxc.oxc-vscode`)을 설치하면 저장 시 Oxfmt 포맷과 Oxlint 자동 수정을 실행합니다.
+
+직접 코드를 작성하며 공부하기 위해 `.vscode/settings.json`에서 인라인 코드 제안(`editor.inlineSuggest.enabled`), Copilot 자동완성(`github.copilot.enable`), 다음 수정 제안(`github.copilot.nextEditSuggestions.enabled`)을 껐습니다. 이 설정은 해당 프로젝트를 연 VS Code 작업 영역에 적용됩니다.
 
 타입 검사에는 **TypeScript 7** (`TypeScriptTeam.native-preview`) 확장이 `node_modules/tsrs/tsdk`를 선택하도록 설정했습니다. 확장 설치 후 작업 영역 SDK 실행에 동의하고 `TypeScript 7: Restart Server` 또는 창 다시 로드를 실행하세요. CLI 검사와 빌드는 확장 설치 없이 tsrs를 사용합니다.
 

@@ -1,0 +1,493 @@
+Day 2 — Zustand로 로그인 상태 관리하기
+어제는 BrowserRouter → Routes → Route와 Link / useNavigate()를 다뤘다. 오늘은 그 라우팅 구조에 Zustand 전역 상태를 붙인다.
+
+오늘 1시간의 목표는 이 흐름을 직접 만드는 것이다.
+로그인 성공했다고 가정
+        ↓
+Zustand에 사용자 저장
+        ↓
+Header/Profile에서 같은 사용자 정보 사용
+        ↓
+로그아웃
+        ↓
+Zustand 초기화
+        ↓
+/ 로 이동
+
+아직 Spring Boot API와 실제 JWT는 연결하지 않는다. 오늘 Zustand, 다음 단계에서 API, 그다음 HTTP-Only Cookie를 붙이는 식으로 하나씩 진행한다.
+0~10분 — 왜 Zustand가 필요한가?
+예를 들어 로그인한 사용자가 있다고 하자.
+{
+  id: 15,
+  nickname: "Reliya"
+}
+
+이 정보는 여러 곳에서 필요할 수 있다.
+Header
+ └─ Reliya님
+
+ProfilePage
+ └─ Reliya의 프로필
+
+LobbyPage
+ └─ Reliya 접속 중
+
+GamePage
+ └─ Player: Reliya
+
+각 컴포넌트에 props로 계속 전달하는 것보다 로그인처럼 애플리케이션 전체에서 필요한 상태는 전역 상태로 관리할 수 있다.
+
+오늘 만들어볼 구조는:
+src/
+├─ store/
+│   └─ authStore.ts
+├─ pages/
+│   ├─ HomePage.tsx
+│   ├─ ProfilePage.tsx
+│   └─ LobbyPage.tsx
+└─ App.tsx
+
+먼저 Zustand가 없다면:
+npm install zustand
+
+10~25분 — 첫 번째 문제
+authStore.ts를 만들어보자.
+
+필요한 상태는 세 가지다.
+user
+login()
+logout()
+
+User 타입은 다음과 같다.
+type User = {
+  id: number;
+  nickname: string;
+};
+
+초기 상태에서는 로그인하지 않았으므로:
+user === null
+
+이어야 한다.
+
+그리고
+login(user)
+
+을 실행하면 해당 사용자가 저장되고,
+logout()
+
+을 실행하면 다시 null이 되어야 한다.
+직접 작성할 부분
+import { create } from "zustand";
+
+type User = {
+  id: number;
+  nickname: string;
+};
+
+type AuthState = {
+  user: ???;
+
+  login: ???;
+
+  logout: ???;
+};
+
+export const useAuthStore = create<AuthState>((set) => ({
+  ???
+}));
+
+여기서 10~15분 정도 직접 작성해보자.
+정답 예시
+import { create } from "zustand";
+
+type User = {
+  id: number;
+  nickname: string;
+};
+
+type AuthState = {
+  user: User | null;
+
+  login: (user: User) => void;
+
+  logout: () => void;
+};
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+
+  login: (user) => set({ user }),
+
+  logout: () => set({ user: null }),
+}));
+
+여기서 가장 중요한 것은 set()이다.
+set({ user })
+
+는 사실상:
+현재 store
+    ↓
+user 변경
+    ↓
+user를 사용하는 React 컴포넌트 다시 렌더링
+
+이라고 생각하면 된다.
+25~35분 — 가짜 로그인 만들기
+아직 Spring Boot API는 사용하지 않는다.
+
+HomePage.tsx에서 버튼을 누르면 로그인된 것처럼 만들어보자.
+
+조건은 다음과 같다.
+[Login]
+
+클릭
+
+↓
+
+{
+  id: 1,
+  nickname: "Reliya"
+}
+
+Zustand 저장
+
+먼저 직접 구현한다.
+
+힌트:
+const login = useAuthStore((state) => state.login);
+
+정답
+import { useAuthStore } from "../store/authStore";
+
+function HomePage() {
+  const login = useAuthStore((state) => state.login);
+
+  const handleLogin = () => {
+    login({
+      id: 1,
+      nickname: "Reliya",
+    });
+  };
+
+  return (
+    <div>
+      <h1>Home</h1>
+
+      <button onClick={handleLogin}>
+        Login
+      </button>
+    </div>
+  );
+}
+
+export default HomePage;
+
+이제 버튼을 누르면 화면상 아무 일도 없는 것처럼 보이지만 Zustand 내부에는:
+user = {
+  id: 1,
+  nickname: "Reliya"
+}
+
+가 들어 있다.
+35~45분 — 다른 페이지에서 상태 읽기
+어제 만든 /profile을 활용한다.
+
+로그인 상태라면:
+Nickname: Reliya
+
+로그인하지 않았다면:
+Not logged in
+
+을 표시해보자.
+
+먼저 직접 구현한다.
+
+힌트는 하나만 사용한다.
+const user = useAuthStore((state) => state.user);
+
+정답
+import { useAuthStore } from "../store/authStore";
+
+function ProfilePage() {
+  const user = useAuthStore((state) => state.user);
+
+  if (user === null) {
+    return <h1>Not logged in</h1>;
+  }
+
+  return (
+    <div>
+      <h1>Profile</h1>
+
+      <p>ID: {user.id}</p>
+      <p>Nickname: {user.nickname}</p>
+    </div>
+  );
+}
+
+export default ProfilePage;
+
+이제 중요한 실험을 해보자.
+1. /
+2. Login 클릭
+3. /profile 이동
+
+HomePage와 ProfilePage는 서로 다른 컴포넌트인데도 Profile에서 Reliya가 보인다.
+
+이게 오늘 배워야 할 핵심이다.
+HomePage
+   │
+   └──────┐
+          ↓
+     Zustand Store
+          ↑
+   ┌──────┘
+   │
+ProfilePage
+
+Home에서 저장한 상태를 Profile에서 읽을 수 있다.
+45~55분 — 실전 문제
+이번에는 어제 배운 useNavigate()와 오늘 배운 Zustand를 합쳐본다.
+
+ProfilePage에:
+[Logout]
+
+버튼을 추가한다.
+
+버튼을 클릭하면:
+logout()
+   ↓
+user = null
+   ↓
+navigate("/")
+
+가 되어야 한다.
+
+여기부터는 정답을 보기 전에 직접 구현해보자.
+
+필요한 것은 두 개다.
+useAuthStore
+useNavigate
+
+정답
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
+
+function ProfilePage() {
+  const navigate = useNavigate();
+
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  if (user === null) {
+    return <h1>Not logged in</h1>;
+  }
+
+  return (
+    <div>
+      <h1>Profile</h1>
+
+      <p>ID: {user.id}</p>
+      <p>Nickname: {user.nickname}</p>
+
+      <button onClick={handleLogout}>
+        Logout
+      </button>
+    </div>
+  );
+}
+
+export default ProfilePage;
+
+어제 배운 것과 연결하면:
+사용자 Logout 클릭
+
+        ↓
+
+handleLogout()
+
+        ↓
+
+logout()
+        ↓
+Zustand
+user = null
+
+        ↓
+
+navigate("/")
+
+        ↓
+
+React Router
+
+        ↓
+
+HomePage
+
+두 개념이 처음으로 연결됐다.
+마지막 5분 — 한 단계 더
+현재 store에 다음 상태를 추가해보자.
+isLoggedIn: boolean
+
+처음에는:
+false
+
+로그인하면:
+true
+
+로그아웃하면:
+false
+
+가 되게 수정한다.
+정답 예시
+import { create } from "zustand";
+
+type User = {
+  id: number;
+  nickname: string;
+};
+
+type AuthState = {
+  user: User | null;
+  isLoggedIn: boolean;
+
+  login: (user: User) => void;
+  logout: () => void;
+};
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isLoggedIn: false,
+
+  login: (user) =>
+    set({
+      user,
+      isLoggedIn: true,
+    }),
+
+  logout: () =>
+    set({
+      user: null,
+      isLoggedIn: false,
+    }),
+}));
+
+그런데 여기서 생각해볼 점이 하나 있다.
+
+사실:
+user !== null
+
+이면 로그인 상태를 이미 알 수 있다.
+
+따라서 작은 프로젝트라면 굳이 isLoggedIn을 별도 저장하지 않고:
+const user = useAuthStore((state) => state.user);
+
+const isLoggedIn = user !== null;
+
+처럼 계산할 수도 있다.
+
+같은 의미의 상태를 두 군데 저장하면 서로 어긋날 가능성이 생긴다는 점을 기억해두자.
+
+예를 들어 실수로:
+set({
+  user: null,
+  isLoggedIn: true,
+});
+
+가 되면 이상한 상태가 만들어진다.
+오늘 자주 하는 실수
+초보 단계에서 특히 이것을 많이 한다.
+const store = useAuthStore();
+
+이것도 동작하지만 컴포넌트가 store의 여러 변경에 영향을 받을 수 있다.
+
+지금부터 필요한 값만 선택하는 습관을 들이는 편이 좋다.
+const user = useAuthStore((state) => state.user);
+
+또 Zustand 상태를 직접 변경하려 하면 안 된다.
+user.nickname = "Test";
+
+대신 store에 액션을 만들어 set()으로 변경한다.
+
+그리고 오늘 가장 중요한 함정이 하나 있다.
+
+페이지를 새로고침해보자.
+Login
+ ↓
+user = Reliya
+ ↓
+F5
+ ↓
+user = null
+
+이건 지금 단계에서는 정상이다.
+
+Zustand 상태는 기본적으로 메모리에 있기 때문이다.
+
+여기서 localStorage에 JWT를 넣으면 되겠네?라고 생각할 수 있지만, 현재 프로젝트에서는 그렇게 하지 않는다.
+
+앞으로 사용할 구조는:
+React
+   │
+   │ POST /login
+   ↓
+Spring Boot
+   │
+   ├─ Access JWT
+   └─ Refresh JWT
+          ↓
+    HTTP-Only Cookie
+
+브라우저가 쿠키 관리
+
+그리고 새로고침이 발생하면 대략:
+React 시작
+
+↓
+
+// 예시
+GET /api/auth/me
+
+↓
+HTTP-Only Cookie 자동 전송
+
+↓
+Spring Security 인증
+
+↓
+200 OK
+{
+  id: 1,
+  nickname: "Reliya"
+}
+
+↓
+Zustand login(user)
+
+↓
+로그인 상태 복구
+
+라는 구조로 발전시킬 수 있다.
+
+즉 Zustand는 JWT 보관함이 아니라 React에서 사용할 사용자 상태를 관리하는 역할로 생각하는 게 좋다.
+오늘 완료 기준
+1시간이 끝났을 때 아래 흐름을 직접 구현할 수 있다면 충분하다.
+useAuthStore
+     ↓
+login(user)
+     ↓
+Zustand
+     ↓
+다른 컴포넌트에서 user 읽기
+     ↓
+logout()
+     ↓
+navigate("/")
+
+그리고 코드 없이도 **“왜 ProfilePage가 HomePage에서 저장한 사용자 정보를 읽을 수 있는가?”**를 설명할 수 있다면 Day 2는 성공이다.

@@ -1,6 +1,12 @@
 {
   "js/ts.experimental.useTsgo": true,
   "js/ts.tsdk.path": "./node_modules/tsrs/tsdk",
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "editor.inlineSuggest.enabled": false,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.nextEditSuggestions.enabled": false,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {

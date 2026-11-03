@@ -163,7 +163,9 @@ return
 
 설정 파일: [.oxfmtrc.json](../.oxfmtrc.json)
 
-## 현재 코드에서 확인한 상태
+## Day 01 당시 코드에서 확인한 상태
+
+후속 기록: [Day 02](day-02.md)에서 Profile의 반환 구조와 Home의 Lobby 링크 문구를 수정하고 로그인·로그아웃 동작을 확인했습니다. 현재 남은 반환 오류는 Deckbuilder·Game 2개입니다. 아래 표와 체크리스트는 Day 01 기록 당시의 상태를 보관합니다.
 
 | 목표                         | 현재 상태                                                                              |
 | ---------------------------- | -------------------------------------------------------------------------------------- |
@@ -173,7 +175,7 @@ return
 | 직접 작성한 a href 없이 이동 | 현재 페이지 이동은 Link와 navigate로 작성됨                                            |
 | Game 버튼 → Lobby            | 이동 함수와 버튼 코드는 있음. return 뒤의 코드가 실행되지 않는 문제를 먼저 확인해야 함 |
 
-최근 `pnpm check`는 린트 단계에서 아래 세 파일의 `no-unreachable` 오류로 중단됐습니다.
+Day 01 당시 `pnpm check`는 린트 단계에서 아래 세 파일의 `no-unreachable` 오류로 중단됐습니다.
 
 - [DeckbuilderPage.tsx](../frontend/src/pages/deckbuilder/DeckbuilderPage.tsx)
 - [GamePage.tsx](../frontend/src/pages/game/GamePage.tsx)
